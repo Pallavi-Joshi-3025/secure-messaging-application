@@ -1,38 +1,48 @@
-name: Docker Image Build
+name: Build and Push to GHCR
 
-# Trigger pipeline on push or pull request to main
 on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
 
-# Minimum permissions required
+  workflow_dispatch:
+
 permissions:
   contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: secure-messaging-application
 
 jobs:
   docker-build:
-    name: Build Docker Image
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout source code
+      # 1. Checkout source code
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # Step 2: Set up Docker Buildx
+      # 2. Configure Docker Buildx
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # Step 3: Build Docker image
-      - name: Build Docker Image
+      # 3. Login to GitHub Container Registry
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # 4. Build and push Docker image
+      - name: Build and Push Docker Image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
           push: true
-          tags: secure-messaging-application:latest
-
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/secure-messaging-application:latest
+            ghcr.io/${{ github.repository_owner }}/secure-messaging-application:${{ github.sha }}
