@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="1480" viewBox="0 0 1180 1480" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#334155"/>
+    </marker>
+    <marker id="arrowRed" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#dc2626"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#16a34a"/>
+    </marker>
+    <style>
+      .title{font-size:30px;font-weight:700;fill:#0f172a}
+      .sub{font-size:15px;fill:#64748b}
+      .lane{font-size:18px;font-weight:700;fill:#1e293b}
+      .step{font-size:14px;fill:#0f172a}
+      .chip{font-size:12.5px;font-weight:600;fill:#1d4ed8}
+      .note{font-size:13px;fill:#475569}
+      .phase{font-size:15px;font-weight:700;fill:#0f172a}
+      .ok{font-size:13px;font-weight:700;fill:#16a34a}
+      .bad{font-size:13px;font-weight:700;fill:#dc2626}
+    </style>
+  </defs>
+
+  <rect width="1180" height="1480" fill="#f8fafc"/>
+
+  <!-- Header -->
+  <text x="40" y="48" class="title">Secure Messaging System — End-to-End Encryption Flow</text>
+  <text x="40" y="74" class="sub">INSE 6110 — Foundations of Cryptography &#183; X25519 &#183; HKDF-SHA-256 &#183; Ed25519 &#183; AES-256-GCM</text>
+
+  <!-- Lanes -->
+  <g>
+    <rect x="40"  y="100" width="300" height="40" rx="8" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="190" y="126" text-anchor="middle" class="lane">Alice (browser)</text>
+    <rect x="440" y="100" width="300" height="40" rx="8" fill="#e2e8f0" stroke="#94a3b8"/>
+    <text x="590" y="126" text-anchor="middle" class="lane">Server / Wire</text>
+    <text x="590" y="156" text-anchor="middle" class="note">stores &amp; relays ciphertext only</text>
+    <rect x="840" y="100" width="300" height="40" rx="8" fill="#dcfce7" stroke="#4ade80"/>
+    <text x="990" y="126" text-anchor="middle" class="lane">Bob (browser)</text>
+  </g>
+
+  <!-- lifelines -->
+  <line x1="190" y1="170" x2="190" y2="1180" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="4 4"/>
+  <line x1="590" y1="170" x2="590" y2="1180" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="4 4"/>
+  <line x1="990" y1="170" x2="990" y2="1180" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="4 4"/>
+
+  <!-- Phase 0: identity -->
+  <rect x="40" y="185" width="1100" height="26" rx="6" fill="#eef2ff"/>
+  <text x="52" y="203" class="phase">0 &#183; Identity setup — long-term Ed25519 keys</text>
+
+  <rect x="120" y="222" width="140" height="34" rx="6" fill="#fff" stroke="#60a5fa"/>
+  <text x="190" y="244" text-anchor="middle" class="step">gen Ed25519 key</text>
+  <rect x="920" y="222" width="140" height="34" rx="6" fill="#fff" stroke="#4ade80"/>
+  <text x="990" y="244" text-anchor="middle" class="step">gen Ed25519 key</text>
+  <line x1="190" y1="275" x2="990" y2="275" stroke="#334155" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+  <text x="590" y="269" text-anchor="middle" class="note">compare identity fingerprints out-of-band (trusted channel)</text>
+
+  <!-- Phase 1: ephemeral exchange -->
+  <rect x="40" y="298" width="1100" height="26" rx="6" fill="#eef2ff"/>
+  <text x="52" y="316" class="phase">1 &#183; Ephemeral key exchange — X25519</text>
+
+  <rect x="120" y="334" width="140" height="34" rx="6" fill="#fff" stroke="#60a5fa"/>
+  <text x="190" y="356" text-anchor="middle" class="step">gen X25519 eph.</text>
+  <rect x="920" y="334" width="140" height="34" rx="6" fill="#fff" stroke="#4ade80"/>
+  <text x="990" y="356" text-anchor="middle" class="step">gen X25519 eph.</text>
+
+  <line x1="190" y1="390" x2="588" y2="390" stroke="#334155" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <text x="300" y="383" class="chip">pubA + Ed25519 sig(transcript)</text>
+  <line x1="592" y1="412" x2="990" y2="412" stroke="#334155" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <text x="700" y="405" class="chip">forward pubA + sig</text>
+
+  <line x1="990" y1="446" x2="592" y2="446" stroke="#334155" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <text x="700" y="439" class="chip" text-anchor="end" >pubB + Ed25519 sig(transcript)</text>
+  <line x1="588" y1="468" x2="190" y2="468" stroke="#334155" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <text x="300" y="461" class="chip">forward pubB + sig</text>
+
+  <!-- Phase 2: authenticate -->
+  <rect x="40" y="492" width="1100" height="26" rx="6" fill="#eef2ff"/>
+  <text x="52" y="510" class="phase">2 &#183; Authenticate handshake — Ed25519 signature verify</text>
+
+  <rect x="110" y="528" width="160" height="34" rx="6" fill="#fff" stroke="#60a5fa"/>
+  <text x="190" y="550" text-anchor="middle" class="step">verify Bob&#8217;s sig</text>
+  <rect x="910" y="528" width="160" height="34" rx="6" fill="#fff" stroke="#4ade80"/>
+  <text x="990" y="550" text-anchor="middle" class="step">verify Alice&#8217;s sig</text>
+  <text x="590" y="550" text-anchor="middle" class="bad">invalid sig &#8658; reject (MITM detected)</text>
+
+  <!-- Phase 3: derive -->
+  <rect x="40" y="574" width="1100" height="26" rx="6" fill="#eef2ff"/>
+  <text x="52" y="592" class="phase">3 &#183; Derive session key — X25519 + HKDF-SHA-256</text>
+
+  <rect x="70" y="610" width="240" height="40" rx="6" fill="#fff" stroke="#60a5fa"/>
+  <text x="190" y="627" text-anchor="middle" class="step">shared = X25519(privA, pubB)</text>
+  <text x="190" y="643" text-anchor="middle" class="step">key = HKDF-SHA-256(shared)</text>
+  <rect x="870" y="610" width="240" height="40" rx="6" fill="#fff" stroke="#4ade80"/>
+  <text x="990" y="627" text-anchor="middle" class="step">shared = X25519(privB, pubA)</text>
+  <text x="990" y="643" text-anchor="middle" class="step">key = HKDF-SHA-256(shared)</text>
+  <text x="590" y="634" text-anchor="middle" class="ok">both derive the SAME 256-bit key</text>
+
+  <!-- Phase 4: messaging -->
+  <rect x="40" y="672" width="1100" height="26" rx="6" fill="#eef2ff"/>
+  <text x="52" y="690" class="phase">4 &#183; Encrypted messaging — AES-256-GCM (fresh 96-bit nonce / msg)</text>
+
+  <rect x="60" y="708" width="260" height="40" rx="6" fill="#fff" stroke="#60a5fa"/>
+  <text x="190" y="725" text-anchor="middle" class="step">iv = random(96-bit)</text>
+  <text x="190" y="741" text-anchor="middle" class="step">ct = AES-256-GCM(key, msg, iv)</text>
+
+  <line x1="190" y1="772" x2="588" y2="772" stroke="#334155" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <text x="300" y="765" class="chip">{ iv, ciphertext + tag }</text>
+  <line x1="592" y1="794" x2="990" y2="794" stroke="#334155" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <text x="700" y="787" class="chip">relay { iv, ciphertext + tag }</text>
+  <rect x="470" y="808" width="240" height="26" rx="6" fill="#fef9c3" stroke="#eab308"/>
+  <text x="590" y="826" text-anchor="middle" class="note">server never sees plaintext or keys</text>
+
+  <rect x="860" y="852" width="260" height="40" rx="6" fill="#fff" stroke="#4ade80"/>
+  <text x="990" y="869" text-anchor="middle" class="step">msg = AES-GCM-decrypt(key, iv, ct)</text>
+  <text x="990" y="885" text-anchor="middle" class="step">tag invalid &#8658; reject (tamper)</text>
+
+  <!-- MITM comparison -->
+  <rect x="40" y="920" width="1100" height="26" rx="6" fill="#fee2e2"/>
+  <text x="52" y="938" class="phase">Why authentication matters — Man-in-the-Middle (Mallory)</text>
+
+  <!-- Unauth box -->
+  <rect x="60" y="962" width="520" height="190" rx="10" fill="#fff" stroke="#fca5a5" stroke-width="2"/>
+  <text x="80" y="990" class="lane" fill="#b91c1c">Unauthenticated exchange</text>
+  <text x="80" y="1016" class="step">Mallory swaps the X25519 ephemeral keys.</text>
+  <text x="80" y="1038" class="step">No signatures &#8658; nobody notices.</text>
+  <!-- small flow -->
+  <rect x="80"  y="1056" width="110" height="30" rx="6" fill="#dbeafe" stroke="#60a5fa"/><text x="135" y="1076" text-anchor="middle" class="step">Alice</text>
+  <rect x="285" y="1056" width="110" height="30" rx="6" fill="#fee2e2" stroke="#dc2626"/><text x="340" y="1076" text-anchor="middle" class="step">Mallory</text>
+  <rect x="490" y="1056" width="80"  height="30" rx="6" fill="#dcfce7" stroke="#4ade80"/><text x="530" y="1076" text-anchor="middle" class="step">Bob</text>
+  <line x1="190" y1="1071" x2="283" y2="1071" stroke="#dc2626" stroke-width="1.6" marker-end="url(#arrowRed)"/>
+  <line x1="395" y1="1071" x2="488" y2="1071" stroke="#dc2626" stroke-width="1.6" marker-end="url(#arrowRed)"/>
+  <text x="300" y="1116" class="bad">Mallory decrypts, reads, re-encrypts every message.</text>
+  <text x="300" y="1136" class="bad">Attack SUCCEEDS &#8212; undetected.</text>
+
+  <!-- Auth box -->
+  <rect x="600" y="962" width="520" height="190" rx="10" fill="#fff" stroke="#86efac" stroke-width="2"/>
+  <text x="620" y="990" class="lane" fill="#15803d">Authenticated exchange (Ed25519)</text>
+  <text x="620" y="1016" class="step">Ephemeral keys are signed with identity keys.</text>
+  <text x="620" y="1038" class="step">Mallory cannot forge the signatures.</text>
+  <rect x="620" y="1056" width="110" height="30" rx="6" fill="#dbeafe" stroke="#60a5fa"/><text x="675" y="1076" text-anchor="middle" class="step">Alice</text>
+  <rect x="825" y="1056" width="110" height="30" rx="6" fill="#fee2e2" stroke="#dc2626"/><text x="880" y="1076" text-anchor="middle" class="step">Mallory</text>
+  <rect x="1030" y="1056" width="80" height="30" rx="6" fill="#dcfce7" stroke="#4ade80"/><text x="1070" y="1076" text-anchor="middle" class="step">Bob</text>
+  <line x1="730" y1="1071" x2="823" y2="1071" stroke="#16a34a" stroke-width="1.6" marker-end="url(#arrowGreen)"/>
+  <line x1="935" y1="1071" x2="1028" y2="1071" stroke="#dc2626" stroke-width="2" stroke-dasharray="4 3"/>
+  <text x="982" y="1050" text-anchor="middle" class="bad">&#10007; sig check fails</text>
+  <text x="840" y="1116" class="ok">Transcript signature check fails on swapped keys.</text>
+  <text x="840" y="1136" class="ok">Attack DETECTED &#8212; handshake rejected.</text>
+
+  <!-- Legend / primitives -->
+  <rect x="40" y="1180" width="1100" height="260" rx="10" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="60" y="1212" class="phase">Cryptographic primitives (as specified in the proposal)</text>
+
+  <g class="step">
+    <rect x="60" y="1230" width="14" height="14" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="84" y="1242">X25519 (RFC 7748) &#8212; elliptic-curve Diffie-Hellman key agreement</text>
+    <rect x="60" y="1262" width="14" height="14" fill="#dcfce7" stroke="#4ade80"/>
+    <text x="84" y="1274">HKDF-SHA-256 (RFC 5869) &#8212; derive the 256-bit AES session key</text>
+    <rect x="60" y="1294" width="14" height="14" fill="#fef9c3" stroke="#eab308"/>
+    <text x="84" y="1306">Ed25519 (RFC 8032) &#8212; signatures authenticate the handshake transcript</text>
+    <rect x="60" y="1326" width="14" height="14" fill="#fee2e2" stroke="#dc2626"/>
+    <text x="84" y="1338">AES-256-GCM (NIST SP 800-38D) &#8212; authenticated encryption + integrity (tag)</text>
+  </g>
+  <text x="60" y="1382" class="note">Implementation: all crypto runs client-side in the browser (Web Crypto API + vendored @noble/ed25519).</text>
+  <text x="60" y="1404" class="note">The server/database stores only ciphertext, IVs, public keys and signatures &#8212; never plaintext or private keys.</text>
+  <text x="60" y="1426" class="note">Message integrity: any change to ciphertext, nonce or AAD makes the GCM tag check fail, so decryption is rejected.</text>
+</svg>

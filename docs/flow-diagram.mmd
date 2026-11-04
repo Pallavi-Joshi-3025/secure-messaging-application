@@ -1,0 +1,37 @@
+%% INSE-6110 Secure Messaging — handshake & messaging flow
+%% Render at https://mermaid.live or with the Mermaid CLI/VS Code extension.
+
+sequenceDiagram
+    autonumber
+    participant A as Alice (browser)
+    participant S as Server / Wire<br/>(sees ciphertext only)
+    participant B as Bob (browser)
+
+    Note over A,B: 0. Identity setup (long-term Ed25519 keys)
+    A->>A: Generate Ed25519 identity key
+    B->>B: Generate Ed25519 identity key
+    A-->>B: Compare identity fingerprints (out-of-band / trusted channel)
+
+    Note over A,B: 1. Ephemeral key exchange (X25519)
+    A->>A: Generate ephemeral X25519 key pair
+    B->>B: Generate ephemeral X25519 key pair
+    A->>S: ephemeral public key A (+ Ed25519 signature over transcript)
+    S->>B: forward A's ephemeral public key + signature
+    B->>S: ephemeral public key B (+ Ed25519 signature over transcript)
+    S->>A: forward B's ephemeral public key + signature
+
+    Note over A,B: 2. Authenticate handshake (Ed25519)
+    A->>A: Verify Bob's signature over transcript
+    B->>B: Verify Alice's signature over transcript
+    Note over A,B: Invalid signature ⇒ reject handshake (MITM detected)
+
+    Note over A,B: 3. Derive session key (X25519 + HKDF-SHA-256)
+    A->>A: shared = X25519(privA, pubB); key = HKDF-SHA-256(shared)
+    B->>B: shared = X25519(privB, pubA); key = HKDF-SHA-256(shared)
+
+    Note over A,B: 4. Encrypted messaging (AES-256-GCM)
+    A->>A: iv = random(96-bit); ct = AES-256-GCM(key, msg, iv)
+    A->>S: {iv, ciphertext+tag}
+    S->>B: {iv, ciphertext+tag}  (server never sees plaintext)
+    B->>B: msg = AES-256-GCM-decrypt(key, iv, ct)
+    Note over B: Tampered ciphertext ⇒ GCM tag fails ⇒ reject

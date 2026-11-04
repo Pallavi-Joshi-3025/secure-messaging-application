@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Secure Messaging System — INSE 6110</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div>
+      <h1>Secure Messaging System</h1>
+      <p class="subtitle">End-to-End Encryption demo &middot; INSE 6110 — Foundations of Cryptography</p>
+    </div>
+    <div class="crypto-stack">
+      <span class="chip">X25519</span>
+      <span class="chip">HKDF-SHA-256</span>
+      <span class="chip">Ed25519</span>
+      <span class="chip">AES-256-GCM</span>
+    </div>
+  </header>
+
+  <!-- Self-test / environment banner -->
+  <div id="selftest-banner" class="banner banner-info">Running crypto self-test…</div>
+
+  <!-- Control panel -->
+  <section class="controls">
+    <div class="control-group">
+      <span class="control-label">Key exchange</span>
+      <div class="toggle" id="auth-toggle">
+        <button class="toggle-btn" data-mode="unauthenticated">Unauthenticated</button>
+        <button class="toggle-btn active" data-mode="authenticated">Authenticated (Ed25519)</button>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <span class="control-label">Attacker</span>
+      <div class="toggle" id="mitm-toggle">
+        <button class="toggle-btn active" data-mitm="off">No MITM</button>
+        <button class="toggle-btn" data-mitm="on">Mallory (MITM)</button>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <button id="establish-btn" class="btn btn-primary">Establish Secure Channel</button>
+      <button id="reset-btn" class="btn">Reset</button>
+    </div>
+  </section>
+
+  <!-- Identity fingerprints -->
+  <section class="fingerprints" id="fingerprints" hidden>
+    <div class="fp-card">
+      <h3>Alice — identity key</h3>
+      <code id="fp-alice">—</code>
+    </div>
+    <div class="fp-card fp-check" id="fp-check">
+      <span id="fp-check-icon">🔑</span>
+      <span id="fp-check-text">Fingerprints verified out-of-band</span>
+    </div>
+    <div class="fp-card">
+      <h3>Bob — identity key</h3>
+      <code id="fp-bob">—</code>
+    </div>
+  </section>
+
+  <!-- Handshake log -->
+  <section class="handshake" id="handshake" hidden>
+    <h2>Handshake</h2>
+    <div class="status-row">
+      <span id="handshake-status" class="status-pill">—</span>
+      <span id="session-key-label" class="session-key"></span>
+    </div>
+    <ol id="handshake-log" class="log-list"></ol>
+  </section>
+
+  <!-- Chat -->
+  <main class="chat-area" id="chat-area" hidden>
+    <div class="party-pane" id="pane-alice">
+      <div class="pane-head"><span class="avatar a">A</span> Alice</div>
+      <div class="messages" id="messages-alice"></div>
+      <form class="composer" id="composer-alice">
+        <input type="text" id="input-alice" placeholder="Message from Alice…" autocomplete="off" />
+        <button type="submit" class="btn btn-send">Send ▸</button>
+      </form>
+    </div>
+
+    <!-- Wire / attacker view -->
+    <div class="wire-pane" id="wire-pane">
+      <div class="pane-head">The Wire <span class="hint">(what the server / network sees)</span></div>
+      <div class="wire" id="wire"></div>
+      <div class="tamper-zone">
+        <label class="checkbox">
+          <input type="checkbox" id="tamper-toggle" />
+          Tamper with next ciphertext (flip a byte)
+        </label>
+      </div>
+    </div>
+
+    <div class="party-pane" id="pane-bob">
+      <div class="pane-head"><span class="avatar b">B</span> Bob</div>
+      <div class="messages" id="messages-bob"></div>
+      <form class="composer" id="composer-bob">
+        <input type="text" id="input-bob" placeholder="Message from Bob…" autocomplete="off" />
+        <button type="submit" class="btn btn-send">Send ▸</button>
+      </form>
+    </div>
+  </main>
+
+  <!-- Performance panel -->
+  <section class="perf" id="perf">
+    <div class="perf-head">
+      <h2>Performance &amp; Security Metrics</h2>
+      <button id="bench-btn" class="btn">Run Benchmark</button>
+    </div>
+    <p class="perf-note">Measured in-browser with the Performance API over synthetic payloads (64 B, 256 B, 1 KB, 4 KB).</p>
+    <div class="perf-live" id="perf-live">
+      <div class="metric"><span class="metric-label">Key establishment</span><span class="metric-value" id="m-keyest">—</span></div>
+      <div class="metric"><span class="metric-label">Last encrypt</span><span class="metric-value" id="m-enc">—</span></div>
+      <div class="metric"><span class="metric-label">Last decrypt</span><span class="metric-value" id="m-dec">—</span></div>
+      <div class="metric"><span class="metric-label">Payload overhead</span><span class="metric-value" id="m-overhead">—</span></div>
+    </div>
+    <table class="bench-table" id="bench-table" hidden>
+      <thead>
+        <tr><th>Payload</th><th>Encrypt (avg)</th><th>Decrypt (avg)</th><th>Ciphertext size</th><th>Overhead</th></tr>
+      </thead>
+      <tbody id="bench-body"></tbody>
+    </table>
+  </section>
+
+  <footer class="app-footer">
+    Educational prototype. Crypto runs entirely in your browser (Web Crypto API + vendored @noble/ed25519). No server stores plaintext or keys.
+  </footer>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "name": "inse6110-secure-messaging",
+  "version": "1.0.0",
+  "description": "Educational end-to-end-encrypted secure messaging demo for INSE-6110 (X25519 + HKDF-SHA-256 + Ed25519 + AES-256-GCM).",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "serve": "python3 -m http.server 8000",
+    "test": "node ./test.mjs"
+  }
+}

@@ -1,0 +1,38 @@
+name: Docker Image Build
+
+# Trigger pipeline on push or pull request to main
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+# Minimum permissions required
+permissions:
+  contents: read
+
+jobs:
+  docker-build:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout source code
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Step 3: Build Docker image
+      - name: Build Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: secure-messaging-application:latest
+
