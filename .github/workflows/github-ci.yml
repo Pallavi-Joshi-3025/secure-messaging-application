@@ -44,5 +44,6 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/secure-messaging-application:latest
-            ghcr.io/${{ github.repository_owner }}/secure-messaging-application:${{ github.sha }}
+            tags: |
+            ghcr.io/pallavi-joshi-3025/secure-messaging-application:latest
+            ghcr.io/pallavi-joshi-3025/secure-messaging-application:${{ github.sha }}
