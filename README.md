@@ -21,7 +21,7 @@ leaves the page. There is **nothing to install** and no build step.
 ## Project layout
 
 ```
-secure-messaging/
+secure-messaging-application/
 ├── index.html              # UI
 ├── css/styles.css          # styling
 ├── js/
@@ -61,7 +61,7 @@ A secure context is required for the Web Crypto API, which `http://localhost` sa
 Use any static file server. The simplest (no install) is Python's built-in server:
 
 ```bash
-cd secure-messaging
+cd secure-messaging-application
 python3 -m http.server 8000
 ```
 
@@ -89,7 +89,7 @@ The app is static, so the image just serves the assets with nginx (listening on 
 runs as non-root).
 
 ```bash
-cd secure-messaging
+cd secure-messaging-application
 docker build -t secure-messaging:1.0.0 .
 docker run --rm -p 8080:8080 secure-messaging:1.0.0
 # open http://localhost:8080/   (health check: http://localhost:8080/healthz)
