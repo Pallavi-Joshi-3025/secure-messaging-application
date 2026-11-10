@@ -5,3 +5,9 @@
 body {
   @apply bg-ground text-ink font-sans antialiased;
 }
+
+/* Chat wallpaper: faint hex digits, like ciphertext in the background. */
+.chat-bg {
+  background-color: #F4F1EA;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27120%27%20height%3D%2760%27%3E%3Ctext%20x%3D%274%27%20y%3D%2718%27%20font-family%3D%27monospace%27%20font-size%3D%2711%27%20fill%3D%27%23E2DDD1%27%3E3F%209A%200C%20E1%3C/text%3E%3Ctext%20x%3D%27-26%27%20y%3D%2746%27%20font-family%3D%27monospace%27%20font-size%3D%2711%27%20fill%3D%27%23E2DDD1%27%3E7B%20D2%2041%205E%208C%3C/text%3E%3C/svg%3E");
+}
