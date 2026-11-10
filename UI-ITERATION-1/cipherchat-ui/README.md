@@ -20,7 +20,7 @@ Tip: press F12 → toggle device toolbar to see it as a phone.
 | URL | What it shows |
 |---|---|
 | `/` | Home / Sign in / Create account (`pages/index.tsx`) |
-| `/chats` | Main app, WhatsApp-style 3 columns (`pages/chats.tsx`) |
+| `/chats` | Main app, expands 3 columns (`pages/chats.tsx`) |
 
 The main app has three columns:
 
@@ -38,7 +38,7 @@ Settings sections (`components/settings/`):
 |---|---|---|
 | Profile | `ProfileSection.tsx` | Profile picture (change/remove), name, username, email |
 | Account | `AccountSection.tsx` | Security notifications, account info, request info / delete account |
-| Privacy | `PrivacySection.tsx` | WhatsApp-style list. *Who can see my personal info*: Last seen and online ›, Profile picture › (Everyone / My contacts / Nobody), Read receipts switch. *Encryption and keys*: Identity key fingerprint › and Verify contacts › (fingerprints always masked; Show is future development), Lab (MITM) test mode switch |
+| Privacy | `PrivacySection.tsx` | List of privacy settings. *Who can see my personal info*: Last seen and online ›, Profile picture › (Everyone / My contacts / Nobody), Read receipts switch. *Encryption and keys*: Identity key fingerprint › and Verify contacts › (fingerprints always masked; Show is future development), Lab (MITM) test mode switch |
 | Agents | — | Future development (menu item only) |
 | Notifications | — | Future development (menu item only) |
 | Help and feedback | `HelpSection.tsx` | FAQ, send feedback, app info |
