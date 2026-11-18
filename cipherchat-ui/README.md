@@ -1,4 +1,4 @@
-# CipherChat — UI (INSE 6110 Secure Messaging)
+# CipherChat — UI (INSE 6110 Secure Messaging Application)
 
 The front-end screens only, built with **Next.js (Pages Router) + TypeScript + Tailwind CSS**.
 All data is fake (`lib/mockData.ts`) so the UI works without Supabase or crypto.
