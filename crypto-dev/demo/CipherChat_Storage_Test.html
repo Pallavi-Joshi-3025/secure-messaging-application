@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CipherChat – Browser Storage Verification</title>
+  <style>
+    body { font: 16px system-ui, sans-serif; color: #17263b; background: #f8fafc; max-width: 780px; margin: 50px auto; padding: 0 18px; }
+    button { background: #174f88; border: 0; border-radius: 8px; padding: 12px 18px; color: white; font-weight: 600; cursor: pointer; }
+    button:disabled { opacity: .5; cursor: wait; }
+    pre { white-space: pre-wrap; word-break: break-word; background: #e7eef7; padding: 18px; border-radius: 8px; line-height: 1.6; }
+    small { color: #5b6677; }
+  </style>
+</head>
+<body>
+  <h1>CipherChat – Browser Storage Verification</h1>
+  <p>Tests whether a <strong>non-extractable Ed25519 identity key</strong> and <strong>replay counters</strong> survive a page refresh. This is an independent cryptography test: no UI or Supabase integration.</p>
+  <p><strong>Instructions:</strong> Click Run, refresh this page (Ctrl+R), and click Run again. On the second run, you should see <em>Previous identity loaded: YES</em> and a larger sequence number.</p>
+  <button id="run">Run storage tests</button>
+  <pre id="out">Ready.</pre>
+  <small>Only synthetic test keys are used. Do not use real accounts or messages. This check does not establish account-specific trust separation or secure session recovery.</small>
+  <script type="module">
+    import { BrowserIdentityStore, BrowserSequenceStore, generateIdentityKeyPair, signTranscript, verifyTranscript } from '../dist/src/index.js';
+    const button = document.querySelector('#run');
+    const output = document.querySelector('#out');
+    const markerKey = 'CipherChat-storage-test-user';
+    button.addEventListener('click', async () => {
+      button.disabled = true;
+      output.textContent = 'Testing...';
+      try {
+        const identityStore = new BrowserIdentityStore();
+        let userId = sessionStorage.getItem(markerKey);
+        let previousIdentityLoaded = false;
+        let identity = userId ? await identityStore.get(userId) : undefined;
+        if (identity) {
+          previousIdentityLoaded = true;
+        } else {
+          userId = 'storage-demo-' + crypto.randomUUID();
+          await identityStore.save(userId, await generateIdentityKeyPair());
+          sessionStorage.setItem(markerKey, userId);
+          identity = await (new BrowserIdentityStore()).get(userId);
+        }
+        if (!identity || !userId) throw new Error('Identity was not recovered from IndexedDB');
+        if (identity.privateKey.extractable) throw new Error('Stored private key is extractable');
+        const bytes = new TextEncoder().encode('CipherChat test: stored key signs a message');
+        const signature = await signTranscript(bytes, identity.privateKey);
+        if (!await verifyTranscript(bytes, signature, identity.publicKey)) {
+          throw new Error('Signature could not be verified with stored identity');
+        }
+        let exportBlocked = false;
+        try { await crypto.subtle.exportKey('pkcs8', identity.privateKey); }
+        catch { exportBlocked = true; }
+        if (!exportBlocked) throw new Error('Unexpectedly allowed private key export');
+        const counters = new BrowserSequenceStore();
+        const sessionId = 'storage-test-' + userId;
+        const seq = await counters.reserveOutgoing(sessionId, userId);
+        if (seq < 1 || !await counters.acceptIncoming(sessionId, userId, seq)) {
+          throw new Error('Incoming sequence was not accepted');
+        }
+        const newReceiver = new BrowserSequenceStore();
+        if (await newReceiver.acceptIncoming(sessionId, userId, seq)) {
+          throw new Error('Replay accepted by a newly created receiver');
+        }
+        output.textContent = [
+          'Stored Ed25519 identity: PASS',
+          'Previous identity loaded: ' + (previousIdentityLoaded ? 'YES' : 'NO (first run)'),
+          'Stored key signature verification: PASS',
+          'Private key export blocked: PASS',
+          'Persistent outgoing sequence: ' + seq,
+          'Recreated receiver rejects replay: PASS',
+          '',
+          'Refresh this page and run once more to verify identity and counter persistence.'
+        ].join('\n');
+      } catch (err) {
+        output.textContent = 'FAIL: ' + (err instanceof Error ? err.message : String(err));
+      } finally { button.disabled = false; }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+timestamp,browser,handshake_mean_ms,plaintext_bytes,encrypt_mean_ms,decrypt_mean_ms,envelope_bytes,overhead_bytes,result
+2026-11-19T22:03:55.641Z,"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",0.840,64,0.090,0.040,297,233,PASS
+2026-11-19T22:03:55.641Z,"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",0.840,256,0.035,0.095,553,297,PASS
+2026-11-19T22:03:55.641Z,"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",0.840,1024,0.045,0.265,1577,553,PASS
+2026-11-19T22:03:55.641Z,"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",0.840,4096,0.100,0.645,5673,1577,PASS

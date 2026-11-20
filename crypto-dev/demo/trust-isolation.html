@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>CipherChat account-scoped trust verification</title>
+<style>body{font:16px system-ui;max-width:800px;margin:50px auto;padding:0 16px;color:#17263b;background:#f8fafc}button{background:#174f88;color:white;padding:12px 18px;border:0;border-radius:8px}pre{white-space:pre-wrap;background:#e9eff7;padding:16px;border-radius:8px}</style></head>
+<body><h1>CipherChat — Account-specific trust test</h1><p>Two synthetic signed-in accounts both know a peer called <code>bob</code>, but each pins a different key. This checks storage separation, not authenticated login.</p>
+<button id="run">Run account isolation tests</button><pre id="out">Ready.</pre>
+<p><small>No Supabase, no real users, and no real message content. Demo fingerprint confirmation is simulated; the real app requires out-of-band comparison.</small></p>
+<script type="module">
+import {BrowserTrustStore,BrowserIdentityStore,generateIdentityKeyPair,confirmPeerFingerprint} from '../dist/src/index.js';
+const out=document.querySelector('#out');
+document.querySelector('#run').addEventListener('click', async ()=>{
+  out.textContent='Running...';
+  try {
+    const identities = new BrowserIdentityStore();
+    async function persistentDemoKey(name) {
+      const id='trust-demo-key-'+name;
+      let saved=await identities.get(id);
+      if (!saved) {
+        await identities.save(id,await generateIdentityKeyPair());
+        saved=await identities.get(id);
+      }
+      if (!saved) throw new Error('Unable to load demonstration identity '+name);
+      return saved;
+    }
+    const bobKeyForAlice=await persistentDemoKey('alice-view');
+    const bobKeyForCarol=await persistentDemoKey('carol-view');
+    if(bobKeyForAlice.fingerprint===bobKeyForCarol.fingerprint) throw new Error('Unexpected identical keys');
+    const alice=new BrowserTrustStore('demo-account-alice');
+    const carol=new BrowserTrustStore('demo-account-carol');
+    await confirmPeerFingerprint(alice,'bob',bobKeyForAlice.publicKeyBase64,bobKeyForAlice.fingerprint);
+    if(await carol.get('bob')) {
+      // If Carol has an old pin, it must match her own demonstration key, not Alice's.
+      const existing=await carol.get('bob');
+      if(existing?.fingerprint!==bobKeyForCarol.fingerprint) throw new Error('Cross-account pin contamination');
+    }
+    await confirmPeerFingerprint(carol,'bob',bobKeyForCarol.publicKeyBase64,bobKeyForCarol.fingerprint);
+    const storedAlice=await (new BrowserTrustStore('demo-account-alice')).get('bob');
+    const storedCarol=await (new BrowserTrustStore('demo-account-carol')).get('bob');
+    if(storedAlice?.fingerprint!==bobKeyForAlice.fingerprint) throw new Error('Alice pin lost');
+    if(storedCarol?.fingerprint!==bobKeyForCarol.fingerprint) throw new Error('Carol pin lost');
+    if(storedAlice.fingerprint===storedCarol.fingerprint) throw new Error('Pins mixed across accounts');
+    let changeBlocked=false;
+    try { await carol.put({userId:'bob',fingerprint:bobKeyForAlice.fingerprint,publicKeyBase64:bobKeyForAlice.publicKeyBase64}); }
+    catch {changeBlocked=true;}
+    if(!changeBlocked) throw new Error('Changed trusted key was accepted');
+    out.textContent=[
+      'Account Alice -> Bob pin: PASS',
+      'Account Carol -> Bob pin: PASS',
+      'Same peer ID, different local owners: ISOLATED',
+      'Previously pinned key cannot silently change: PASS',
+      'IndexedDB state persists across new store instances: PASS',
+      '', 'Refresh and run again; all tests should still pass.'
+    ].join('\n');
+  } catch(e){out.textContent='FAIL: '+(e instanceof Error?e.message:String(e));}
+});
+</script></body></html>

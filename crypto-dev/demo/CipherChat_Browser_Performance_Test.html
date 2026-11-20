@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CipherChat – Browser Performance Measurements</title>
+  <style>
+    body { font: 15px system-ui, sans-serif; color: #1d2d3f; background: #f8fafc; max-width: 940px; margin: 40px auto; padding: 0 20px; line-height: 1.55; }
+    h1 { font-size: 25px; margin-bottom: 7px; }
+    p, small { color: #4b5e73; }
+    button { background: #174f88; color: #fff; font-weight: 600; border: 0; border-radius: 7px; padding: 11px 16px; cursor: pointer; margin: 8px 8px 8px 0; }
+    button:disabled { opacity: .55; cursor: wait; }
+    #download { background: #526b85; }
+    pre { padding: 15px; background: #eaf0f7; border-radius: 9px; white-space: pre-wrap; overflow-wrap: anywhere; }
+    table { border-collapse: collapse; width: 100%; margin-top: 16px; font-variant-numeric: tabular-nums; }
+    td, th { padding: 9px 10px; border: 1px solid #d5deea; text-align: right; }
+    td:first-child, th:first-child { text-align: left; }
+    th { background: #eaf0f7; }
+    .scroll { overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>CipherChat – Browser Cryptography Performance Test</h1>
+  <p>INSE 6110 educational measurements using the browser's <code>performance.now()</code>. Tests 64 B, 256 B, 1 KB, and 4 KB messages with 20 encrypt/decrypt trials each, plus five authenticated-handshake trials. No Supabase, real users, or private messages are involved.</p>
+  <button id="run">Run browser benchmark</button>
+  <button id="download" disabled>Download CSV</button>
+  <pre id="summary">Ready. Click “Run browser benchmark.”</pre>
+  <div class="scroll"><table id="results" hidden>
+    <thead><tr><th>Plaintext bytes</th><th>Encrypt mean (ms)</th><th>Decrypt mean (ms)</th><th>Envelope bytes</th><th>Overhead bytes</th><th>Correctness</th></tr></thead>
+    <tbody></tbody>
+  </table></div>
+  <p><small>Measurements include JavaScript and encoding overhead and are not comparable to production security benchmarks. Run at least twice and record the browser version and conditions. The authentication checks use synthetic, pre-trusted identities; this does not verify real-world identity enrollment.</small></p>
+<script type="module">
+import {
+  generateIdentityKeyPair, MemoryTrustStore, confirmPeerFingerprint,
+  startHandshake, respondHandshake, signHandshake, finishHandshake,
+  encryptMessage, decryptMessage
+} from '../dist/src/index.js';
+
+const runButton = document.querySelector('#run');
+const downloadButton = document.querySelector('#download');
+const summary = document.querySelector('#summary');
+const resultsTable = document.querySelector('#results');
+const resultsBody = resultsTable.querySelector('tbody');
+const encoder = new TextEncoder();
+let csvText = '';
+
+function average(items) { return items.reduce((sum, v) => sum + v, 0) / items.length; }
+function ms(value) { return value.toFixed(3); }
+
+async function establishSession(aliceIdentity, bobIdentity, trustedAlice, trustedBob) {
+  const start = performance.now();
+  const init = await startHandshake('alice', 'bob', 'performance-demo');
+  const resp = await respondHandshake('bob', init.hello);
+  const aliceSig = await signHandshake(init.hello, resp.hello, aliceIdentity.privateKey);
+  const bobSig = await signHandshake(init.hello, resp.hello, bobIdentity.privateKey);
+  const alice = await finishHandshake(init, init.hello, resp.hello, bobSig, trustedBob);
+  const bob = await finishHandshake(resp, init.hello, resp.hello, aliceSig, trustedAlice);
+  const elapsed = performance.now() - start;
+  return { alice, bob, elapsed };
+}
+
+runButton.addEventListener('click', async () => {
+  runButton.disabled = true;
+  downloadButton.disabled = true;
+  resultsTable.hidden = true;
+  resultsBody.replaceChildren();
+  summary.textContent = 'Measuring browser cryptography...';
+  try {
+    if (!crypto?.subtle) throw new Error('Web Crypto is unavailable; use http://localhost:4173 in a modern browser.');
+    const aliceIdentity = await generateIdentityKeyPair();
+    const bobIdentity = await generateIdentityKeyPair();
+    const trustedAlice = await confirmPeerFingerprint(new MemoryTrustStore(), 'alice', aliceIdentity.publicKeyBase64, aliceIdentity.fingerprint);
+    const trustedBob = await confirmPeerFingerprint(new MemoryTrustStore(), 'bob', bobIdentity.publicKeyBase64, bobIdentity.fingerprint);
+
+    // Warm-up operations are intentionally excluded from the reported timings.
+    const warm = await establishSession(aliceIdentity, bobIdentity, trustedAlice, trustedBob);
+    const warmEnvelope = await encryptMessage('warmup', warm.alice, 1);
+    if (await decryptMessage(warmEnvelope, warm.bob) !== 'warmup') throw new Error('Warm-up correctness failure');
+
+    const handshakeTimings = [];
+    let current;
+    for (let i = 0; i < 5; i++) {
+      current = await establishSession(aliceIdentity, bobIdentity, trustedAlice, trustedBob);
+      handshakeTimings.push(current.elapsed);
+    }
+    const { alice, bob } = current;
+
+    const rows = [];
+    let sequence = 1;
+    for (const bytes of [64, 256, 1024, 4096]) {
+      const plaintext = 'A'.repeat(bytes);  // ASCII: string length equals encoded UTF-8 byte count.
+      if (encoder.encode(plaintext).length !== bytes) throw new Error('Incorrect plaintext test size');
+      const encryptTimings = [];
+      const decryptTimings = [];
+      let envelopeBytes = 0;
+      for (let trial = 0; trial < 20; trial++) {
+        const startEnc = performance.now();
+        const envelope = await encryptMessage(plaintext, alice, sequence++);
+        encryptTimings.push(performance.now() - startEnc);
+        const startDec = performance.now();
+        const decrypted = await decryptMessage(envelope, bob);
+        decryptTimings.push(performance.now() - startDec);
+        if (decrypted !== plaintext) throw new Error(`Incorrect decryption for ${bytes} bytes`);
+        envelopeBytes = encoder.encode(JSON.stringify(envelope)).length;
+      }
+      rows.push({bytes, encrypt:average(encryptTimings), decrypt:average(decryptTimings), envelopeBytes, overhead:envelopeBytes-bytes});
+    }
+    for (const row of rows) {
+      const tr = document.createElement('tr');
+      for (const value of [row.bytes,ms(row.encrypt),ms(row.decrypt),row.envelopeBytes,row.overhead,'PASS']) {
+        const td = document.createElement('td'); td.textContent = String(value); tr.appendChild(td);
+      }
+      resultsBody.appendChild(tr);
+    }
+    resultsTable.hidden = false;
+    const isoDate = new Date().toISOString();
+    summary.textContent = `RESULT: PASS\nTimestamp: ${isoDate}\nBrowser: ${navigator.userAgent}\nAuthenticated handshake: ${ms(average(handshakeTimings))} ms average (5 runs, excludes initial identity-key generation)\nMessage sizes: 64, 256, 1024, 4096 bytes\nEncryption/decryption repeats: 20 per message size\nAll decrypted messages matched their original plaintext.`;
+    const lines = [
+      'timestamp,browser,handshake_mean_ms,plaintext_bytes,encrypt_mean_ms,decrypt_mean_ms,envelope_bytes,overhead_bytes,result',
+      ...rows.map(r => [isoDate, `"${navigator.userAgent.replaceAll('"','""')}"`,ms(average(handshakeTimings)),r.bytes,ms(r.encrypt),ms(r.decrypt),r.envelopeBytes,r.overhead,'PASS'].join(','))
+    ];
+    csvText = lines.join('\r\n');
+    downloadButton.disabled = false;
+  } catch (error) {
+    summary.textContent = 'ERROR: ' + (error instanceof Error ? error.message : String(error));
+  } finally { runButton.disabled = false; }
+});
+
+downloadButton.addEventListener('click', () => {
+  if (!csvText) return;
+  const url = URL.createObjectURL(new Blob([csvText], {type:'text/csv;charset=utf-8'}));
+  const a = document.createElement('a'); a.href=url; a.download='cipherchat-browser-benchmark.csv'; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
+</script>
+</body>
+</html>

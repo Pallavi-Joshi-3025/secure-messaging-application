@@ -1,0 +1,20 @@
+{
+  "name": "cipherchat-crypto-dev",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Browser-compatible educational end-to-end encryption module for INSE 6110 CipherChat",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/*.test.ts",
+    "demo": "tsx demo/secureMessaging.ts",
+    "benchmark": "tsx demo/benchmark.ts",
+    "browser-demo": "node demo/serve.mjs",
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.8.3"
+  }
+}
