@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CipherChat: Browser Cryptography Verification</title>
+  <style>
+    body {font: 16px system-ui,sans-serif;max-width:850px;margin:48px auto;padding:0 20px;background:#f8fafc;color:#17263b}
+    h1{font-size:26px} button{background:#174f88;color:white;border:0;border-radius:7px;padding:11px 18px;cursor:pointer}
+    pre{white-space:pre-wrap;background:#e9eff7;padding:18px;border-radius:8px;line-height:1.65}
+    small{color:#536279}
+  </style>
+</head>
+<body>
+  <h1>CipherChat – Browser Cryptography Demo</h1>
+  <p>This page performs Ed25519, X25519, HKDF and AES-GCM in <strong>your browser</strong>; no Supabase or UI integration is required.</p>
+  <button id="run">Run local browser demo</button>
+  <pre id="output">Ready.</pre>
+  <small>For classroom tests only. Fingerprints in this two-person simulation are obtained directly, not authenticated through a real independent channel.</small>
+  <script type="module">
+    import {
+      generateIdentityKeyPair, MemoryTrustStore, confirmPeerFingerprint,
+      startHandshake, respondHandshake, signHandshake, finishHandshake,
+      BrowserSequenceStore, SecureMessenger
+    } from '../dist/src/index.js';
+    const out = document.querySelector('#output');
+    document.querySelector('#run').addEventListener('click', async () => {
+      out.textContent = 'Running...';
+      try {
+        const ia = await generateIdentityKeyPair();
+        const ib = await generateIdentityKeyPair();
+        const aTrust = new MemoryTrustStore();
+        const bTrust = new MemoryTrustStore();
+        const trustedB = await confirmPeerFingerprint(aTrust, 'bob', ib.publicKeyBase64, ib.fingerprint);
+        const trustedA = await confirmPeerFingerprint(bTrust, 'alice', ia.publicKeyBase64, ia.fingerprint);
+        const init = await startHandshake('alice','bob','browser-demo');
+        const resp = await respondHandshake('bob', init.hello);
+        const aSig = await signHandshake(init.hello,resp.hello,ia.privateKey);
+        const bSig = await signHandshake(init.hello,resp.hello,ib.privateKey);
+        const a = await finishHandshake(init,init.hello,resp.hello,bSig,trustedB);
+        const b = await finishHandshake(resp,init.hello,resp.hello,aSig,trustedA);
+        const store = new BrowserSequenceStore();
+        const alice = new SecureMessenger(a, store);
+        const bob = new SecureMessenger(b, store);
+        const envelope = await alice.send('Hello Bob!');
+        const recovered = await bob.receive(envelope);
+        let replay = 'FAILED';
+        try { await bob.receive(envelope); } catch { replay = 'REJECTED'; }
+        let tampered = 'FAILED';
+        try { await bob.receive({...envelope, sequence: 99}); } catch { tampered = 'REJECTED'; }
+        out.textContent = 'AES-GCM + X25519 + Ed25519 + HKDF: PASS\n' +
+          'Decrypted plaintext: ' + recovered + '\n' +
+          'Replay: ' + replay + '\n' +
+          'Tampered sequence: ' + tampered + '\n' +
+          'Message envelope: ' + JSON.stringify(envelope, null, 2) + '\n' +
+          'Browser: ' + navigator.userAgent;
+      } catch (error) {
+        out.textContent = 'ERROR: ' + (error instanceof Error ? error.message : String(error));
+      }
+    });
+    if (new URLSearchParams(location.search).has("auto")) {
+      document.querySelector("#run").click();
+    }
+  </script>
+</body>
+</html>
